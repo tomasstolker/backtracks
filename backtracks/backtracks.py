@@ -57,6 +57,7 @@ class System():
         **unif (float): Sets bounds for uniform prior around estimated candidate companion location. Defaults to 5e-3 if not defined. [degrees]
         **ref_epoch_idx (int): ID of datapoint at which to pin stationary tracks. Defaults to 0 if not defined. Follows order of candidate_file datapoints.
         **query_file (str): Name of the FITS file with the Gaia query output. This file is created when running backtracks for the first time on a ``target_name``. Adding the filename will skip the query of the Gaia archive.
+        **par_prior
     """
 
     def __init__(self, target_name: str, candidate_file: str, nearby_window: float = 0.5, fileprefix = './', ndim = 11, **kwargs):
@@ -93,6 +94,11 @@ class System():
             self.relax_par_priors = kwargs['relax_par_priors']
         else: 
             self.relax_par_priors = False
+
+        if 'par_prior' in kwargs:
+            self.par_prior = kwargs['par_prior']
+        else: 
+            self.par_prior = None
 
         if 'rv_host_method' in kwargs:
              if 'rv_host_params' not in kwargs:
@@ -571,7 +577,9 @@ class System():
             pmra = transform_normal(pmra, self.mu_pmra, self.sigma_pmra)
             pmdec = transform_normal(pmdec, self.mu_pmdec, self.sigma_pmdec)
 
-        if self.relax_par_priors:
+        if self.par_prior is not None:
+            par = transform_uniform(par, self.par_prior[0], self.par_prior[1])
+        elif self.relax_par_priors:
             par = transform_uniform(par, 1e-2, self.paro)
         elif par is not None:
             # ndim = 5 or ndim = 11
